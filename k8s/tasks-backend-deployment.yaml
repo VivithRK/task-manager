@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tasks-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tasks-backend
+  template:
+    metadata:
+      labels:
+        app: tasks-backend
+    spec:
+      containers:
+      - name: tasks-backend
+        image: stripr/tasks-app:backend  
+        ports:
+        - containerPort: 5000
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-uri-secret
+              key: MONGODB_URI
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tasks-backend-service
+spec:
+  selector:
+    app: tasks-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: LoadBalancer  # Use NodePort if running locally without cloud provider 

@@ -1,0 +1,4 @@
+k8s/mongo-secret.yaml
+k8s/mongo-uri-secret.yaml
+node_modules
+.env
