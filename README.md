@@ -40,7 +40,7 @@ npm install
 Create a `.env` file:
 ```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/tasks-db
+MONGODB_URI=<YourConnectionString>
 ```
 
 3. **Run the Application:**
@@ -57,14 +57,14 @@ npm start
 1. **Build Docker Image:**
 ```bash
 # Replace yourusername with your Docker Hub username
-docker build -t yourusername/tasks-backend:latest .
+docker build -t yourusername/tasks-backend:imagename .
 ```
 
 2. **Run Container Locally:**
 ```bash
 docker run -d -p 5000:5000 \
   -e MONGODB_URI=mongodb://host.docker.internal:27017/tasks-db \
-  yourusername/tasks-backend:latest
+  yourusername/tasks-backend:imagename
 ```
 
 3. **Push to Docker Hub:**
@@ -73,7 +73,7 @@ docker run -d -p 5000:5000 \
 docker login
 
 # Push image
-docker push yourusername/tasks-backend:latest
+docker push yourusername/tasks-backend:imagename
 ```
 
 ## Kubernetes Deployment
@@ -83,18 +83,42 @@ docker push yourusername/tasks-backend:latest
 - kubectl CLI tool
 - MongoDB instance (local or Atlas)
 
+### Pre-Deployment Steps
+```bash
+# Create minikube cluster, use driver as virtualbox or hyper-v
+minikube start --driver=virtualbox
+
+# Create new namespace 
+kubectl create ns tasks-app
+
+# Make the namespace current
+kubectl config --current -n tasks-app
+```
+
 ### Deployment Steps
 
 1. **Create MongoDB URI Secret:**
+The secrets inside should be in base64.
+
 ```bash
-# First, encode your MongoDB URI
+# If in linux use the below command or else use https://cyberchef.com
 echo -n "your_mongodb_uri" | base64
 
 # Apply the secret
 kubectl apply -f k8s/mongodb-uri-secret.yaml
+
+kubectl apply -f k8s/mongodb-secret.yaml
 ```
 
-2. **Deploy Backend:**
+
+2. **Deploy MongoDB:**
+```bash
+# Apply backend deployment and service
+kubectl apply -f k8s/mongodb-deployment.yaml
+```
+
+
+3. **Deploy Backend:**
 ```bash
 # Apply backend deployment and service
 kubectl apply -f k8s/tasks-backend-deployment.yaml
@@ -102,6 +126,9 @@ kubectl apply -f k8s/tasks-backend-deployment.yaml
 
 3. **Verify Deployment:**
 ```bash
+# Check all
+kubectl get all
+
 # Check pods status
 kubectl get pods
 
@@ -115,10 +142,8 @@ kubectl get services
 ```bash
 # Get service URL (Minikube)
 minikube service tasks-backend-service --url
+# Use the above URL to check the api's
 
-# Or use port-forwarding
-kubectl port-forward service/tasks-backend-service 8080:80
-# Access via http://localhost:8080
 ```
 
 #### Cloud Provider
@@ -229,15 +254,4 @@ curl -X DELETE http://your-api-url/api/tasks/:id
 3. **MongoDB connection issues:**
 - Verify MongoDB URI secret: `kubectl get secret mongodb-uri-secret -o yaml`
 - Check pod environment variables: `kubectl exec -it <pod-name> -- env | grep MONGODB`
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the ISC License. 
+	
